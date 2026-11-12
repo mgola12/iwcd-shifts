@@ -1,0 +1,8 @@
+[Unit]
+Description=IWCD shift tool: refresh HKDB IdP metadata
+
+[Service]
+Type=oneshot
+User=iwcd
+WorkingDirectory=/srv/iwcd-shifts/app
+ExecStart=/srv/iwcd-shifts/venv/bin/python manage.py fetch_idp_metadata

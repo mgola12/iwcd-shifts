@@ -135,6 +135,8 @@ SAML_CREATE_UNKNOWN_USER = True
 ACS_DEFAULT_REDIRECT_URL = "/calendar/"
 SAML_IGNORE_LOGOUT_ERRORS = True
 
+# HKDB metadata is malformed upstream (undeclared namespace) and expires after ~20 days,
+# so always use the local copy written by `manage.py fetch_idp_metadata` (daily timer).
 # Attributes arrive as urn:oid names; pysaml2 converts them to friendly names.
 # Both forms are listed so the mapping works either way.
 SAML_ATTRIBUTE_MAPPING = {
@@ -157,11 +159,7 @@ if SAML_ENABLED:
     import saml2.saml
     import saml2.xmldsig
 
-    _idp_metadata = (
-        {"local": [str(SAML_IDP_METADATA_FILE)]}
-        if SAML_IDP_METADATA_FILE.exists()
-        else {"remote": [{"url": SAML_IDP_METADATA_URL}]}
-    )
+    _idp_metadata = {"local": [str(SAML_IDP_METADATA_FILE)]} if SAML_IDP_METADATA_FILE.exists() else {}
     _contact = []
     if env("SAML_CONTACT_EMAIL", default=""):
         _contact = [{
@@ -178,7 +176,9 @@ if SAML_ENABLED:
         "service": {
             "sp": {
                 "name": "IWCD Shifts",
-                "name_id_format": saml2.saml.NAMEID_FORMAT_EMAILADDRESS,
+                # HKDB offers persistent/transient only. Users are matched on the 'mail'
+                # attribute, so the NameID format does not matter to us.
+                "name_id_format": saml2.saml.NAMEID_FORMAT_PERSISTENT,
                 "endpoints": {
                     "assertion_consumer_service": [
                         (f"{BASE_URL}/saml/acs/", saml2.BINDING_HTTP_POST),

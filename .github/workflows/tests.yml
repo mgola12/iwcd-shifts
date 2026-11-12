@@ -46,5 +46,9 @@ jobs:
           assert r.status_code == 200, "metadata view failed"
           assert "https://iwcd-shifts.hyperk.ca/saml/acs/" in body, "ACS URL missing"
           assert "https://iwcd-shifts.hyperk.ca/saml/sls/" in body, "SLO URL missing"
+          from djangosaml2.conf import get_config
+          idp = list(get_config().metadata.identity_providers())
+          print("IdPs loaded:", idp)
+          assert "hkdbweb.in2p3.fr" in idp, "HKDB IdP not loaded from metadata"
           print("SAML metadata OK")
           PY

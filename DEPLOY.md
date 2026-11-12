@@ -1,6 +1,6 @@
 # Deploying iwcd-shifts on the wcte.hyperk.ca server
 
-Target: **https://iwcd-shifts.hyperk.ca**, running next to wcte.hyperk.ca.
+Target: **https://iwcd-shifts.hyperk.ca**, running next to wcte.hyperk.ca. Expected time is about 1–2 hours.
 It's a small Django app (Python, SQLite, gunicorn) behind the existing nginx (or Apache).
 
 ## 0. Prerequisites
@@ -16,7 +16,7 @@ It's a small Django app (Python, SQLite, gunicorn) behind the existing nginx (or
 ```bash
 sudo useradd --system --home /srv/iwcd-shifts --shell /usr/sbin/nologin iwcd
 sudo mkdir -p /srv/iwcd-shifts/{data,backups,saml}
-sudo git clone https://github.com/<org>/iwcd-shifts.git /srv/iwcd-shifts/app   # or unzip the release
+sudo git clone https://github.com/mgola12/iwcd-shifts.git /srv/iwcd-shifts/app   # or unzip the release
 sudo python3 -m venv /srv/iwcd-shifts/venv
 sudo /srv/iwcd-shifts/venv/bin/pip install -r /srv/iwcd-shifts/app/requirements.txt
 sudo chown -R iwcd:iwcd /srv/iwcd-shifts
@@ -46,7 +46,7 @@ sudo -u iwcd ../venv/bin/python manage.py fetch_idp_metadata
 ```
 
 - The certificate is valid for 10 years and appears in our SP metadata. **Back up `sp.key`.** If it changes, Hyper-K has to re-register the SP.
-- Re-run `fetch_idp_metadata` whenever IN2P3 rotates their certificate.
+- The HKDB metadata expires about 20 days after download, so a daily timer (`iwcd-shifts-idp-metadata.timer`, step 5) refreshes it. The command also repairs a missing XML namespace declaration in the HKDB file.
 
 ## 4. Database and initial data
 
@@ -66,7 +66,7 @@ sudo -u iwcd DEBUG=True SECRET_KEY=x ../venv/bin/python manage.py test shifts   
 ```bash
 sudo cp deploy/iwcd-shifts.service deploy/iwcd-shifts-*.service deploy/iwcd-shifts-*.timer /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl enable --now iwcd-shifts iwcd-shifts-reminders.timer iwcd-shifts-backup.timer
+sudo systemctl enable --now iwcd-shifts iwcd-shifts-reminders.timer iwcd-shifts-backup.timer iwcd-shifts-idp-metadata.timer
 systemctl status iwcd-shifts
 ```
 
