@@ -1,0 +1,49 @@
+name: tests
+
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      DEBUG: "True"
+      SECRET_KEY: ci-only-not-secret
+      SAML_DIR: /tmp/saml
+      BASE_URL: https://iwcd-shifts.hyperk.ca
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install xmlsec1 and Python packages
+        run: |
+          sudo apt-get update && sudo apt-get install -y xmlsec1
+          pip install -r requirements.txt
+      - name: Migrations (creates them if not committed yet)
+        run: |
+          python manage.py makemigrations shifts
+          python manage.py migrate
+      - name: Django system check
+        run: python manage.py check
+      - name: Unit tests
+        run: python manage.py test shifts -v 2
+      - name: SAML metadata smoke test (also checks HKDB metadata is reachable)
+        run: |
+          mkdir -p /tmp/saml
+          openssl req -x509 -newkey rsa:2048 -nodes -days 1 -keyout /tmp/saml/sp.key \
+            -out /tmp/saml/sp.crt -subj "/CN=ci"
+          python manage.py fetch_idp_metadata
+          python - <<'PY'
+          import os, django
+          os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
+          django.setup()
+          from django.test import Client
+          r = Client().get("/saml/metadata/", HTTP_HOST="iwcd-shifts.hyperk.ca")
+          body = r.content.decode()
+          print(r.status_code)
+          print(body[:4000])
+          assert r.status_code == 200, "metadata view failed"
+          assert "https://iwcd-shifts.hyperk.ca/saml/acs/" in body, "ACS URL missing"
+          assert "https://iwcd-shifts.hyperk.ca/saml/sls/" in body, "SLO URL missing"
+          print("SAML metadata OK")
+          PY
