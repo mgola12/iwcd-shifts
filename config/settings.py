@@ -56,6 +56,7 @@ TEMPLATES = [
     },
 ]
 
+(BASE_DIR / "data").mkdir(exist_ok=True)  # default SQLite location (git-ignored, so may not exist)
 DATABASES = {
     "default": env.db("DATABASE_URL", default=f"sqlite:///{BASE_DIR / 'data' / 'db.sqlite3'}"),
 }

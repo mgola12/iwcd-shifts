@@ -9,6 +9,7 @@ jobs:
       DEBUG: "True"
       SECRET_KEY: ci-only-not-secret
       SAML_DIR: /tmp/saml
+      DATABASE_URL: sqlite:////tmp/ci-db.sqlite3
       BASE_URL: https://iwcd-shifts.hyperk.ca
     steps:
       - uses: actions/checkout@v4
