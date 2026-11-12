@@ -1,6 +1,6 @@
 # Deploying iwcd-shifts on the wcte.hyperk.ca server
 
-Target: **https://iwcd-shifts.hyperk.ca**, running next to wcte.hyperk.ca. Expected time is about 1–2 hours.
+Target: **https://iwcd-shifts.hyperk.ca**, running next to wcte.hyperk.ca.
 It's a small Django app (Python, SQLite, gunicorn) behind the existing nginx (or Apache).
 
 ## 0. Prerequisites
