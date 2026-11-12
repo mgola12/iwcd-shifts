@@ -1,0 +1,12 @@
+{% if c.active %}
+<td class="av-cell {% if c.av %}av-{{ c.av.state }}{% else %}av-none{% endif %}"
+    hx-post="{% url 'availability_toggle' %}" hx-vals='{"role": "{{ role.id }}", "date": "{{ c.date|date:"Y-m-d" }}"}'
+    hx-swap="outerHTML" title="{% if c.av.comment %}{{ c.av.comment }}{% else %}Click to change{% endif %}">
+  <span class="daynum">{{ c.date.day }}</span>
+  {% if c.assigned %}<span class="badge bg-dark">assigned</span>{% endif %}
+  <div>{% if c.av %}{{ c.av.get_state_display }}{% else %}&nbsp;{% endif %}</div>
+  {% if c.av.comment %}<div class="small fst-italic text-truncate">{{ c.av.comment }}</div>{% endif %}
+</td>
+{% else %}
+<td class="av-inactive"><span class="daynum">{{ c.date.day }}</span>{% if c.closed %}<div class="small">{{ c.closed }}</div>{% endif %}</td>
+{% endif %}

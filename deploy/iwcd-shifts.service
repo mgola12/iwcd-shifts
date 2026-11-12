@@ -1,0 +1,15 @@
+[Unit]
+Description=IWCD shift tool (gunicorn)
+After=network.target
+
+[Service]
+User=iwcd
+Group=iwcd
+WorkingDirectory=/srv/iwcd-shifts/app
+EnvironmentFile=/srv/iwcd-shifts/app/.env
+ExecStart=/srv/iwcd-shifts/venv/bin/gunicorn config.wsgi:application \
+    --bind 127.0.0.1:8010 --workers 3 --timeout 60 --access-logfile -
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

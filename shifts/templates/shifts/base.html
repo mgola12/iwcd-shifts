@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}IWCD Shifts{% endblock %}</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.3/dist/htmx.min.js" defer></script>
+<style>
+  .cal td{vertical-align:top;height:7.5rem;width:20%;font-size:.8rem}
+  .cal td.out{background:#f8f9fa}
+  .cal td.closed{background:repeating-linear-gradient(45deg,#f1f3f5,#f1f3f5 6px,#e9ecef 6px,#e9ecef 12px)}
+  .cal td.today{outline:2px solid #0d6efd;outline-offset:-2px}
+  .daynum{font-weight:600}
+  .pill{display:block;border-radius:.25rem;padding:0 .3rem;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .st-filled{background:#d1e7dd}.st-avail{background:#fff3cd}.st-gap{background:#f8d7da}.st-open{background:#e9ecef}
+  .av-cell{cursor:pointer;user-select:none}
+  .av-preferred{background:#198754;color:#fff}.av-available{background:#75b798}.av-if_needed{background:#ffe69c}
+  .av-none{background:#fff}.av-inactive{background:#f1f3f5;color:#adb5bd;cursor:default}
+  .phase-bar{height:4px;border-radius:2px;margin-bottom:2px}
+  @media print{.no-print{display:none!important}}
+</style>
+{% block head %}{% endblock %}
+</head>
+<body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+<nav class="navbar navbar-expand-md navbar-dark bg-dark no-print">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="{% url 'calendar' %}">IWCD Shifts</a>
+    {% if user.is_authenticated %}
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav"><span class="navbar-toggler-icon"></span></button>
+    <div class="collapse navbar-collapse" id="nav">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item"><a class="nav-link" href="{% url 'calendar' %}">Calendar</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'availability' %}">My availability</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'me' %}">My shifts</a></li>
+        {% if user.is_staff %}
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Coordinator</a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{% url 'coverage' %}">Coverage &amp; assign</a></li>
+            <li><a class="dropdown-item" href="{% url 'eligibility' %}">Eligibility list</a></li>
+            <li><a class="dropdown-item" href="{% url 'import_shifters' %}">Import shifters</a></li>
+            <li><a class="dropdown-item" href="{% url 'totals' %}">Yearly totals</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="{% url 'export_assignments' %}">Export assignments (CSV)</a></li>
+            <li><a class="dropdown-item" href="{% url 'export_availability' %}">Export availability (CSV)</a></li>
+            <li><a class="dropdown-item" href="{% url 'admin:index' %}">Django admin</a></li>
+          </ul>
+        </li>
+        {% endif %}
+      </ul>
+      <span class="navbar-text me-3 small">{{ user.name }}</span>
+      <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="btn btn-outline-light btn-sm">Sign out</button></form>
+    </div>
+    {% endif %}
+  </div>
+</nav>
+<main class="container-fluid py-3" style="max-width:1400px">
+  {% for m in messages %}
+  <div class="alert alert-{% if m.tags == 'error' %}danger{% else %}{{ m.tags|default:'info' }}{% endif %} alert-dismissible fade show no-print">{{ m }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+  {% endfor %}
+  {% block content %}{% endblock %}
+</main>
+<footer class="text-center text-muted small py-3 no-print">IWCD shift tool · times in JST · J-PARC RD Building · <a href="https://github.com/" class="text-muted">MIT licence</a></footer>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+[Unit]
+Description=IWCD shift tool: nightly SQLite backup
+
+[Service]
+Type=oneshot
+User=iwcd
+WorkingDirectory=/srv/iwcd-shifts/app
+ExecStart=/srv/iwcd-shifts/venv/bin/python manage.py backup_db

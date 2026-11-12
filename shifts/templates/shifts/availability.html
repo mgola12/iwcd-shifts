@@ -1,0 +1,51 @@
+{% extends "shifts/base.html" %}
+{% block content %}
+<h1 class="h4">My availability</h1>
+{% if not roles %}
+  <div class="alert alert-info">You are not on the approved shift-leader list yet. Volunteers send the coordinator a short
+  note on their experience; the list is confirmed by the integration TC, IWCD group leaders, TCs and Integration Engineer.
+  Once you are added, you can enter availability here.</div>
+{% else %}
+<ul class="nav nav-tabs mb-3">
+  {% for r in roles %}<li class="nav-item"><a class="nav-link {% if r == role %}active{% endif %}" href="?role={{ r.id }}">{{ r.name }}</a></li>{% endfor %}
+</ul>
+<p class="small text-muted mb-2">{{ role.phase.name }}: {{ role.phase.start_date|date:"j M Y" }} – {{ role.phase.end_date|date:"j M Y" }}. {{ role.description }}</p>
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="d-flex align-items-center gap-2 mb-2">
+      <a class="btn btn-outline-secondary btn-sm" href="?role={{ role.id }}&m={{ prev_m }}">&larr;</a>
+      <h2 class="h5 mb-0">{{ month|date:"F Y" }}</h2>
+      <a class="btn btn-outline-secondary btn-sm" href="?role={{ role.id }}&m={{ next_m }}">&rarr;</a>
+      <span class="ms-auto small">
+        <span class="badge av-preferred">Preferred</span> <span class="badge av-available">Available</span>
+        <span class="badge av-if_needed text-dark">If needed</span> <span class="badge border text-dark">–</span>
+      </span>
+    </div>
+    <p class="small text-muted">Click a day to cycle: Preferred → Available → If needed → none. {{ total }} day(s) marked in total for {{ role.code }}.</p>
+    <table class="table table-bordered cal">
+      <thead><tr><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th></tr></thead>
+      <tbody>{% for week in weeks %}<tr>{% for c in week %}{% if c %}{% include "shifts/partials/avail_cell.html" %}{% else %}<td class="out"></td>{% endif %}{% endfor %}</tr>{% endfor %}</tbody>
+    </table>
+  </div>
+  <div class="col-lg-4">
+    <div class="card"><div class="card-body">
+      <h2 class="h6">Set a date range</h2>
+      <p class="small text-muted">Applies to working days only. Please offer blocks of at least 5 consecutive shifts.</p>
+      <form method="post" action="{% url 'availability_range' %}">{% csrf_token %}
+        {{ form.role }}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+        <div class="row g-2">
+          <div class="col-6"><label class="form-label small">From</label><input type="date" name="start" class="form-control" value="{{ form.start.value|date:'Y-m-d' }}" required></div>
+          <div class="col-6"><label class="form-label small">To</label><input type="date" name="end" class="form-control" value="{{ form.end.value|date:'Y-m-d' }}" required></div>
+          <div class="col-12"><label class="form-label small">State</label>
+            <select name="state" class="form-select">{% for v, l in form.fields.state.choices %}<option value="{{ v }}" {% if v == 'available' %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></div>
+          <div class="col-12"><label class="form-label small">Comment (optional)</label><input name="comment" maxlength="300" class="form-control"></div>
+          <div class="col-12"><button class="btn btn-primary w-100">Save</button></div>
+        </div>
+      </form>
+    </div></div>
+    <p class="small text-muted mt-3">Only the coordinator sees your availability. Marking availability is not a commitment;
+      the coordinator makes the assignments and you get an email when assigned.</p>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,10 @@
+{% extends "shifts/base.html" %}
+{% block content %}
+<div class="d-flex align-items-center gap-2 mb-3"><h1 class="h4 mb-0">Totals {{ year }}</h1>
+  <a class="btn btn-outline-secondary btn-sm" href="?year={{ year|add:'-1' }}">&larr;</a><a class="btn btn-outline-secondary btn-sm" href="?year={{ year|add:'1' }}">&rarr;</a>
+  <a class="ms-auto" href="?year={{ year }}&format=csv">CSV</a></div>
+<p class="small text-muted">Counted shifts exclude SLA overlap and onboarding days, which are listed separately. Hours = counted shifts × 8.</p>
+<table class="table table-sm"><thead><tr><th>Name</th><th>Institution</th><th>Role</th><th>Counted shifts</th><th>Hours</th><th>Overlap days</th><th>Onboarding days</th><th>of which cover</th></tr></thead>
+<tbody>{% for r in rows %}<tr><td>{{ r.user.name }}</td><td>{{ r.user.institution }}</td><td>{{ r.role }}</td><td>{{ r.shifts }}</td><td>{{ r.hours }}</td><td>{{ r.overlap }}</td><td>{{ r.onboarding }}</td><td>{{ r.cover }}</td></tr>
+{% empty %}<tr><td colspan="8" class="text-muted">No assignments in {{ year }}.</td></tr>{% endfor %}</tbody></table>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends "shifts/base.html" %}
+{% block content %}
+<div class="d-flex align-items-center gap-2 mb-3">
+  <a class="btn btn-outline-secondary btn-sm" href="{% url 'day' prev_day|date:'Y-m-d' %}">&larr;</a>
+  <h1 class="h4 mb-0">{{ day|date:"l j F Y" }}</h1>
+  <a class="btn btn-outline-secondary btn-sm" href="{% url 'day' next_day|date:'Y-m-d' %}">&rarr;</a>
+  <a class="ms-3" href="{% url 'calendar' %}?m={{ day|date:'Y-m' }}">month view</a>
+</div>
+{% if phase %}<p><span class="badge" style="background:{{ phase.color }}">{{ phase.name }}</span>
+  {% if phase.manual_url %}<a href="{{ phase.manual_url }}" target="_blank">Phase manual</a>{% endif %}
+  · {{ SHIFT_START }}–{{ SHIFT_END }} JST · J-PARC RD Building</p>{% endif %}
+{% if closed %}<div class="alert alert-secondary">No shifts: {{ closed }}</div>{% endif %}
+{% if not entries and not closed %}<p class="text-muted">No shifts on this day.</p>{% endif %}
+<div class="row g-3">
+{% for e in entries %}
+  <div class="col-md-6 col-xl-4"><div class="card h-100">
+    <div class="card-header d-flex"><strong>{{ e.role.name }}</strong>
+      <span class="ms-auto badge {% if e.status == 'filled' %}bg-success{% elif e.status == 'avail' and user.is_staff %}bg-warning text-dark{% elif user.is_staff %}bg-danger{% else %}bg-secondary{% endif %}">{{ e.filled }}/{{ e.role.slots_per_day }}</span></div>
+    <div class="card-body">
+      {% if e.role.is_shifter %}<p class="small text-muted mb-2">Via Hyper-K central scheduler (read-only)</p>{% endif %}
+      <ul class="list-unstyled mb-2">
+      {% for a in e.assignments %}<li>{{ a.user.name }} {% if a.flag != 'none' %}<span class="badge bg-info text-dark">{{ a.get_flag_display }}</span>{% endif %}
+          {% if user.is_staff and not e.role.is_shifter %}
+          <form method="post" action="{% url 'unassign_one' a.pk %}" class="d-inline">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="btn btn-link btn-sm text-danger p-0" onclick="return confirm('Remove {{ a.user.name|escapejs }}?')">remove</button></form>{% endif %}
+      </li>{% empty %}<li class="text-muted">Nobody assigned</li>{% endfor %}
+      </ul>
+      {% if user.is_staff and not e.role.is_shifter %}
+        <h6 class="small text-uppercase text-muted">Available</h6>
+        <ul class="list-unstyled small mb-0">
+        {% for av in e.available %}<li class="mb-1"><span class="badge av-{{ av.state }}">{{ av.get_state_display }}</span> {{ av.user.name }}
+          {% if av.comment %}<span class="text-muted">– {{ av.comment }}</span>{% endif %}
+          <form method="post" action="{% url 'assign_day' %}" class="d-inline">{% csrf_token %}
+            <input type="hidden" name="role" value="{{ e.role.id }}"><input type="hidden" name="user" value="{{ av.user.id }}">
+            <input type="hidden" name="date" value="{{ day|date:'Y-m-d' }}"><input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <button class="btn btn-outline-primary btn-sm py-0">assign</button></form></li>
+        {% empty %}<li class="text-muted">Nobody marked available</li>{% endfor %}
+        </ul>
+        <form method="post" action="{% url 'assign_day' %}" class="mt-2">{% csrf_token %}
+          <input type="hidden" name="role" value="{{ e.role.id }}"><input type="hidden" name="user" value="{{ user.id }}">
+          <input type="hidden" name="date" value="{{ day|date:'Y-m-d' }}"><input type="hidden" name="flag" value="cover">
+          <input type="hidden" name="next" value="{{ request.get_full_path }}">
+          <button class="btn btn-outline-secondary btn-sm">Assign myself (cover)</button></form>
+      {% endif %}
+    </div></div></div>
+{% endfor %}
+</div>
+{% endblock %}

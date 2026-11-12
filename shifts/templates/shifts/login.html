@@ -1,0 +1,21 @@
+{% extends "shifts/base.html" %}
+{% block content %}
+<div class="row justify-content-center mt-4"><div class="col-md-6 col-lg-5">
+  <div class="card shadow-sm"><div class="card-body p-4">
+    <h1 class="h4 mb-1">IWCD shift tool</h1>
+    <p class="text-muted">Super-Module assembly shifts, J-PARC RD Building, 2027–2028.</p>
+    {% if SAML_ENABLED %}
+    <a class="btn btn-primary w-100 btn-lg" href="/saml/login/?next={{ next|default:'/calendar/'|urlencode }}">Sign in with Hyper-K account</a>
+    <p class="small text-muted mt-2 mb-0">Uses the Hyper-K collaboration login (HKDB).</p>
+    {% endif %}
+    {% if MAGIC_LINK_ENABLED %}
+    <hr>
+    <p class="small mb-2">Problems with Hyper-K login? Get a one-time sign-in link by email (only for addresses already in this tool).</p>
+    <form method="post" action="{% url 'email_login' %}" class="d-flex gap-2">{% csrf_token %}
+      <input type="email" name="email" class="form-control" placeholder="you@institution" required>
+      <button class="btn btn-outline-secondary text-nowrap">Email me a link</button>
+    </form>
+    {% endif %}
+  </div></div>
+</div></div>
+{% endblock %}

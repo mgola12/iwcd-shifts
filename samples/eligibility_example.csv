@@ -1,0 +1,4 @@
+email,role,eligible,note,name,confirmed_on
+jane.doe@example.org,SL1,yes,Confirmed at TC meeting,Jane Doe,2026-11-20
+jane.doe@example.org,SLB,yes,,Jane Doe,2026-11-20
+john.roe@example.org,SLA,yes,,John Roe,2026-11-20

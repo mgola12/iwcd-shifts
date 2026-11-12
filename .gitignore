@@ -1,0 +1,10 @@
+.env
+data/
+backups/
+saml/*.key
+saml/*.crt
+saml/idp-metadata.xml
+staticfiles/
+__pycache__/
+*.pyc
+.venv/

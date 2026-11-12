@@ -1,0 +1,8 @@
+[Unit]
+Description=IWCD shift tool: T-7 / T-1 reminders
+
+[Service]
+Type=oneshot
+User=iwcd
+WorkingDirectory=/srv/iwcd-shifts/app
+ExecStart=/srv/iwcd-shifts/venv/bin/python manage.py send_reminders

@@ -1,0 +1,49 @@
+{% extends "shifts/base.html" %}
+{% block content %}
+<div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+  <a class="btn btn-outline-secondary btn-sm" href="?m={{ prev_m }}">&larr;</a>
+  <h1 class="h4 mb-0">{{ month|date:"F Y" }}</h1>
+  <a class="btn btn-outline-secondary btn-sm" href="?m={{ next_m }}">&rarr;</a>
+  <a class="btn btn-outline-secondary btn-sm ms-2" href="{% url 'print_month' this_m %}" target="_blank">Print</a>
+  <div class="ms-auto small">
+    {% for p in phases %}<span class="badge" style="background:{{ p.color }}">{{ p.name }}</span> {% endfor %}
+  </div>
+</div>
+<div class="small mb-2">
+  <span class="pill d-inline st-filled">assigned</span>
+  {% if user.is_staff %}<span class="pill d-inline st-avail">availability only</span> <span class="pill d-inline st-gap">gap</span>
+  {% else %}<span class="pill d-inline st-open">open</span>{% endif %}
+  · Mon–Fri {{ SHIFT_START }}–{{ SHIFT_END }} JST
+</div>
+<table class="table table-bordered cal">
+  <thead><tr><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th></tr></thead>
+  <tbody>
+  {% for week in weeks %}<tr>
+    {% for c in week %}
+      {% if c %}
+      <td class="{% if c.closed %}closed{% endif %} {% if c.today %}today{% endif %}">
+        {% if c.phase %}<div class="phase-bar" style="background:{{ c.phase.color }}"></div>{% endif %}
+        <a class="daynum text-decoration-none" href="{% url 'day' c.date|date:'Y-m-d' %}">{{ c.date.day }}</a>
+        {% if c.closed %}<div class="text-muted">{{ c.closed }}</div>{% endif %}
+        {% for e in c.entries %}
+          {% if e.role.is_shifter %}
+            <span class="pill {% if e.filled >= e.role.slots_per_day %}st-filled{% else %}st-open{% endif %}">Shifters {{ e.filled }}/{{ e.role.slots_per_day }}</span>
+          {% else %}
+            {% with st=e.status %}
+            <span class="pill {% if st == 'filled' %}st-filled{% elif user.is_staff %}st-{{ st }}{% else %}st-open{% endif %}"
+                  title="{% for a in e.assignments %}{{ a.user.name }}{% if a.flag != 'none' %} ({{ a.flag }}){% endif %}; {% endfor %}">
+              <b>{{ e.role.code }}</b>
+              {% for a in e.assignments %}{{ a.user.name }}{% if not forloop.last %}, {% endif %}{% empty %}
+                {% if user.is_staff %}{% if e.available %}{{ e.available|length }} avail{% else %}gap{% endif %}{% else %}open{% endif %}
+              {% endfor %}
+            </span>
+            {% endwith %}
+          {% endif %}
+        {% endfor %}
+      </td>
+      {% else %}<td class="out"></td>{% endif %}
+    {% endfor %}
+  </tr>{% endfor %}
+  </tbody>
+</table>
+{% endblock %}

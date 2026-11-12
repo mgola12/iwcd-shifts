@@ -1,0 +1,40 @@
+{% extends "shifts/base.html" %}
+{% block content %}
+<h1 class="h4">Eligible shift leaders</h1>
+{% if preview %}
+<div class="card border-primary mb-4"><div class="card-body">
+  <h2 class="h6">Preview: {{ preview.name }} (nothing saved yet)</h2>
+  {% for e in preview.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+  <table class="table table-sm mt-2"><thead><tr><th>Line</th><th>Email</th><th>Name</th><th>Role</th><th>Eligible</th><th>Note</th><th>Action</th></tr></thead>
+  <tbody>{% for r in preview.rows %}<tr><td>{{ r.line }}</td><td>{{ r.email }}</td><td>{{ r.name }}</td><td>{{ r.role.code }}</td><td>{{ r.eligible|yesno }}</td><td>{{ r.note }}</td><td>{{ r.action }}</td></tr>{% endfor %}</tbody></table>
+  {% if preview.rows %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="commit"><button class="btn btn-primary">Commit {{ preview.rows|length }} row(s)</button> <a href="{% url 'eligibility' %}" class="btn btn-link">Cancel</a></form>{% endif %}
+</div></div>
+{% endif %}
+<div class="row g-3 mb-4">
+  <div class="col-md-6"><div class="card h-100"><div class="card-body">
+    <h2 class="h6">Upload CSV</h2>
+    <p class="small text-muted mb-2">Columns: <code>email,role,eligible,note</code> (optional <code>name,confirmed_on</code>). Role = SL1, SLA or SLB; eligible = yes/no. One row per person per role. Re-uploading updates existing rows.</p>
+    <form method="post" enctype="multipart/form-data" class="d-flex gap-2">{% csrf_token %}<input type="hidden" name="action" value="upload">
+      <input type="file" name="file" accept=".csv,text/csv" class="form-control" required><button class="btn btn-outline-primary">Preview</button></form>
+  </div></div></div>
+  <div class="col-md-6"><div class="card h-100"><div class="card-body">
+    <h2 class="h6">Add / update one person</h2>
+    <form method="post" class="row g-2">{% csrf_token %}<input type="hidden" name="action" value="add">
+      <div class="col-6"><input type="email" name="email" class="form-control" placeholder="email" required></div>
+      <div class="col-6"><input name="name" class="form-control" placeholder="Name (if new)"></div>
+      <div class="col-4"><select name="role" class="form-select">{% for v, l in add_form.fields.role.choices %}{% if v %}<option value="{{ v }}">{{ l }}</option>{% endif %}{% endfor %}</select></div>
+      <div class="col-4"><input type="date" name="confirmed_on" class="form-control" title="confirmed on"></div>
+      <div class="col-4 form-check pt-2 ps-4"><input type="checkbox" name="eligible" class="form-check-input" id="el" checked><label for="el" class="form-check-label">eligible</label></div>
+      <div class="col-9"><input name="note" class="form-control" placeholder="note"></div>
+      <div class="col-3"><button class="btn btn-primary w-100">Save</button></div>
+    </form>
+  </div></div></div>
+</div>
+<table class="table table-sm">
+  <thead><tr><th>Role</th><th>Name</th><th>Email</th><th>Eligible</th><th>Confirmed</th><th>Tutorials</th><th>Safety</th><th>Onboarding</th><th>Note</th></tr></thead>
+  <tbody>{% for e in elig %}<tr class="{% if not e.eligible %}text-muted{% endif %}"><td>{{ e.role.code }}</td><td>{{ e.user.name }}</td><td>{{ e.user.email }}</td>
+    <td>{{ e.eligible|yesno:"yes,no" }}</td><td>{{ e.confirmed_on|default:"" }}</td><td>{{ e.tutorials_done|yesno:"✓," }}</td><td>{{ e.site_safety_done|yesno:"✓," }}</td><td>{{ e.onboarding_done|yesno:"✓," }}</td><td class="small">{{ e.note }}</td></tr>
+  {% empty %}<tr><td colspan="9" class="text-muted">No one yet.</td></tr>{% endfor %}</tbody>
+</table>
+<p class="small"><a href="{% url 'admin:shifts_eligibility_changelist' %}">Edit flags (tutorials, safety, onboarding) in the admin</a></p>
+{% endblock %}

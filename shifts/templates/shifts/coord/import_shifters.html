@@ -1,0 +1,20 @@
+{% extends "shifts/base.html" %}
+{% block content %}
+<h1 class="h4">Import shifters (Hyper-K central scheduler)</h1>
+<p class="small text-muted">CSV columns <code>date,name,email,note</code>, dates YYYY-MM-DD (JST). Re-uploading replaces all imported shifter rows between the first and last date in the file.</p>
+{% if preview %}
+<div class="card border-primary mb-4"><div class="card-body">
+  <h2 class="h6">Preview: {{ preview.name }} {% if preview.start %}({{ preview.start }} – {{ preview.end }}){% endif %} – nothing saved yet</h2>
+  {% for e in preview.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+  {% for w in preview.warnings %}<div class="text-warning-emphasis small">{{ w }}</div>{% endfor %}
+  <table class="table table-sm mt-2"><thead><tr><th>Date</th><th>Name</th><th>Email</th><th>Phase</th><th>Note</th></tr></thead>
+  <tbody>{% for r in preview.rows %}<tr><td>{{ r.date }}</td><td>{{ r.name }}</td><td>{{ r.email }}</td><td>{{ r.role.phase.code }}</td><td>{{ r.note }}</td></tr>{% endfor %}</tbody></table>
+  {% if preview.rows %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="commit"><button class="btn btn-primary">Commit {{ preview.rows|length }} row(s)</button> <a class="btn btn-link" href="{% url 'import_shifters' %}">Cancel</a></form>{% endif %}
+</div></div>
+{% endif %}
+<form method="post" enctype="multipart/form-data" class="d-flex gap-2 mb-4" style="max-width:600px">{% csrf_token %}
+  <input type="file" name="file" accept=".csv,text/csv" class="form-control" required><button class="btn btn-outline-primary">Preview</button></form>
+<h2 class="h6">Recent imports</h2>
+<table class="table table-sm w-auto"><tbody>{% for h in history %}<tr><td>{{ h.ts|date:"Y-m-d H:i" }}</td><td>{{ h.file_name }}</td><td>{{ h.rows_loaded }} rows</td><td>{{ h.date_range_start }} – {{ h.date_range_end }}</td><td>{{ h.admin }}</td></tr>
+{% empty %}<tr><td class="text-muted">None yet.</td></tr>{% endfor %}</tbody></table>
+{% endblock %}

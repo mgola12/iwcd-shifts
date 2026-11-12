@@ -1,0 +1,73 @@
+{% extends "shifts/base.html" %}
+{% block content %}
+<div class="d-flex align-items-center gap-2 flex-wrap mb-2">
+  <h1 class="h4 mb-0 me-3">Coverage</h1>
+  <ul class="nav nav-pills">{% for r in roles %}<li class="nav-item"><a class="nav-link py-1 {% if r == role %}active{% endif %}" href="?role={{ r.id }}&m={{ this_m }}">{{ r.code }}</a></li>{% endfor %}</ul>
+  <a class="btn btn-outline-secondary btn-sm ms-3" href="?role={{ role.id }}&m={{ prev_m }}">&larr;</a>
+  <strong>{{ month|date:"F Y" }}</strong>
+  <a class="btn btn-outline-secondary btn-sm" href="?role={{ role.id }}&m={{ next_m }}">&rarr;</a>
+  <span class="ms-auto small">
+    <span class="pill d-inline st-filled">{{ summary.filled }} filled</span>
+    <span class="pill d-inline st-avail">{{ summary.avail }} availability only</span>
+    <span class="pill d-inline st-gap">{{ summary.gap }} gaps</span> · {{ eligible_count }} eligible for {{ role.code }}
+  </span>
+</div>
+<p class="small text-muted">{{ role.name }} · {{ role.phase.name }} ({{ role.phase.start_date|date:"j M Y" }} – {{ role.phase.end_date|date:"j M Y" }})</p>
+<div class="row g-3">
+<div class="col-xl-8">
+  <table class="table table-sm align-middle">
+    <thead><tr><th style="width:8rem">Date</th><th>Assigned</th><th>Available</th></tr></thead>
+    <tbody>
+    {% for c in rows %}
+    <tr class="st-{{ c.status }}">
+      <td><a href="{% url 'day' c.date|date:'Y-m-d' %}">{{ c.date|date:"D j M" }}</a></td>
+      <td>{% for a in c.assignments %}
+        <span class="text-nowrap">{{ a.user.name }}{% if a.flag != 'none' %} <span class="badge bg-info text-dark">{{ a.flag }}</span>{% endif %}
+        <form method="post" action="{% url 'unassign_one' a.pk %}" class="d-inline">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+          <button class="btn btn-link btn-sm p-0 text-danger" title="remove" onclick="return confirm('Remove {{ a.user.name|escapejs }} on {{ c.date|date:'j M' }}?')">&times;</button></form></span>{% if not forloop.last %}<br>{% endif %}
+        {% empty %}<span class="text-muted">–</span>{% endfor %}</td>
+      <td class="small">{% for av in c.available %}
+        <form method="post" action="{% url 'assign_day' %}" class="d-inline">{% csrf_token %}
+          <input type="hidden" name="role" value="{{ role.id }}"><input type="hidden" name="user" value="{{ av.user.id }}">
+          <input type="hidden" name="date" value="{{ c.date|date:'Y-m-d' }}"><input type="hidden" name="next" value="{{ request.get_full_path }}">
+          <button class="btn btn-sm py-0 px-1 mb-1 badge av-{{ av.state }} border-0 {% if av.state == 'if_needed' %}text-dark{% endif %}" title="{{ av.get_state_display }}{% if av.comment %}: {{ av.comment }}{% endif %} – click to assign this day">{{ av.user.name }}{% if av.comment %} *{% endif %}</button></form>
+        {% empty %}{% if c.status == 'gap' %}<span class="text-danger">nobody available</span>{% endif %}{% endfor %}</td>
+    </tr>
+    {% empty %}<tr><td colspan="3" class="text-muted">No working days for {{ role.code }} this month.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+  <p class="small text-muted">Click a name to assign that single day. * = has a comment (hover). Use the block form for ranges.</p>
+</div>
+<div class="col-xl-4">
+  <div class="card mb-3"><div class="card-body">
+    <h2 class="h6">Assign a block</h2>
+    <form method="post" action="{% url 'assign_range' %}">{% csrf_token %}
+      <input type="hidden" name="role" value="{{ role.id }}">
+      <label class="form-label small">Person</label>
+      <select name="user" class="form-select mb-2" required><option value="">—</option>
+        {% for u in users %}<option value="{{ u.id }}">{{ u.name }}{% if u.is_staff %} (coordinator){% endif %}</option>{% endfor %}</select>
+      <div class="row g-2 mb-2">
+        <div class="col"><label class="form-label small">From</label><input type="date" name="start" class="form-control" value="{{ assign_form.start.value|date:'Y-m-d' }}" required></div>
+        <div class="col"><label class="form-label small">To</label><input type="date" name="end" class="form-control" value="{{ assign_form.end.value|date:'Y-m-d' }}" required></div>
+      </div>
+      <div class="row g-2 mb-2">
+        <div class="col"><label class="form-label small">Flag</label><select name="flag" class="form-select">{% for v, l in assign_form.fields.flag.choices %}<option value="{{ v }}">{{ l }}</option>{% endfor %}</select></div>
+        <div class="col"><label class="form-label small">First 2 days</label><select name="first_two_flag" class="form-select">{% for v, l in assign_form.fields.first_two_flag.choices %}<option value="{{ v }}">{{ l }}</option>{% endfor %}</select></div>
+      </div>
+      <div class="form-check mb-2"><input class="form-check-input" type="checkbox" name="only_available" id="oa"><label class="form-check-label small" for="oa">Only days the person marked available</label></div>
+      <input name="note" class="form-control mb-2" placeholder="Note (optional)" maxlength="300">
+      <button class="btn btn-primary w-100">Preview</button>
+    </form>
+  </div></div>
+  <div class="card"><div class="card-body">
+    <h2 class="h6">Remove a block</h2>
+    <form method="post" action="{% url 'unassign_range' %}">{% csrf_token %}
+      <input type="hidden" name="role" value="{{ role.id }}"><input type="hidden" name="next" value="{{ request.get_full_path }}">
+      <select name="user" class="form-select mb-2" required><option value="">—</option>{% for u in users %}<option value="{{ u.id }}">{{ u.name }}</option>{% endfor %}</select>
+      <div class="row g-2 mb-2"><div class="col"><input type="date" name="start" class="form-control" required></div><div class="col"><input type="date" name="end" class="form-control" required></div></div>
+      <button class="btn btn-outline-danger w-100" onclick="return confirm('Remove all assignments of this person in the range? They will be emailed.')">Remove</button>
+    </form>
+  </div></div>
+</div>
+</div>
+{% endblock %}

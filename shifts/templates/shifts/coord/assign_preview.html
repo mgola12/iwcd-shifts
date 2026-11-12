@@ -1,0 +1,17 @@
+{% extends "shifts/base.html" %}
+{% block content %}
+<h1 class="h4">Confirm assignment</h1>
+<p><strong>{{ plan.user.name }}</strong> as <strong>{{ plan.role.name }}</strong>: {{ plan.days|length }} working day(s).</p>
+{% for w in plan.warnings %}<div class="alert alert-warning py-2">{{ w }}</div>{% endfor %}
+{% if plan.skipped %}<p class="small text-muted">Already assigned (skipped): {% for d in plan.skipped %}{{ d|date:"j M" }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>{% endif %}
+{% if plan.days %}
+<table class="table table-sm w-auto"><thead><tr><th>Date</th><th>Flag</th></tr></thead>
+<tbody>{% for d, f in plan.days %}<tr><td>{{ d|date:"D j M Y" }}</td><td>{% if f != 'none' %}<span class="badge bg-info text-dark">{{ f }}</span>{% endif %}</td></tr>{% endfor %}</tbody></table>
+<form method="post" action="{% url 'assign_range' %}">{% csrf_token %}
+  {% for name, value in form.data.items %}{% if name != 'csrfmiddlewaretoken' and name != 'confirm' %}<input type="hidden" name="{{ name }}" value="{{ value }}">{% endif %}{% endfor %}
+  <input type="hidden" name="confirm" value="1">
+  <button class="btn btn-primary">Assign and email {{ plan.user.get_short_name }}</button>
+  <a class="btn btn-link" href="{{ back }}">Cancel</a>
+</form>
+{% else %}<a class="btn btn-secondary" href="{{ back }}">Back</a>{% endif %}
+{% endblock %}
